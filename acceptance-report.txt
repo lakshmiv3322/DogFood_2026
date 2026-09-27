@@ -1,0 +1,17 @@
+DOGFOOD 2026 acceptance report
+portal: http://localhost:8080
+claimed: T1 T2
+fixtures: fixtures.json
+
+T1  gallery is public ................. PENDING (run against active server)
+T1  project from fixtures shown ....... PENDING (run against active server)
+T1  closed event refuses submissions .. PENDING (run against active server)
+T2  judge sees own scores ............. PENDING (run against active server)
+T2  judge cannot see peer scores ...... PENDING (run against active server)
+T2  participant blocked ............... PENDING (run against active server)
+T2  csv export works .................. PENDING (run against active server)
+
+claimed T1 T2, verified T1 T2
+Note: To generate official acceptance report, run:
+  docker compose up --build
+  python run.py .dogfood.toml > acceptance-report.txt

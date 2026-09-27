@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dogfood2026
+      POSTGRES_USER: dogfood
+      POSTGRES_PASSWORD: dogfood_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dogfood -d dogfood2026"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # No external network ports exposed — checker connects via the app
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:3000"
+    environment:
+      DATABASE_URL: postgresql://dogfood:dogfood_secret@db:5432/dogfood2026
+      NODE_ENV: production
+      NEXTAUTH_SECRET: "dogfood2026-hackathon-secret-change-in-production"
+    depends_on:
+      db:
+        condition: service_healthy
+    # No external network deps — self-contained as required
+
+volumes:
+  pgdata:
+
+# ─── Network ──────────────────────────────────────────────────────────────────
+# Default bridge network only — no internet access required.
+# Run with: docker compose up --build
+# Portal: http://localhost:8080
+# Checker: python3 run.py .dogfood.toml > acceptance-report.txt

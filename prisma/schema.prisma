@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id               String   @id
+  name             String
+  submissionsClose DateTime
+  createdAt        DateTime @default(now())
+
+  projects Project[]
+}
+
+model Track {
+  id   String @id
+  name String
+
+  projects Project[]
+  judges   JudgeTrack[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role
+  sessionId String?  @unique
+  createdAt DateTime @default(now())
+
+  scores     Score[]
+  judgeTrack JudgeTrack[]
+  votes      Vote[]
+  comments   Comment[]
+}
+
+enum Role {
+  ORGANIZER
+  JUDGE
+  PARTICIPANT
+}
+
+model JudgeTrack {
+  judgeId String
+  trackId String
+  judge   User   @relation(fields: [judgeId], references: [id])
+  track   Track  @relation(fields: [trackId], references: [id])
+
+  @@id([judgeId, trackId])
+}
+
+model Team {
+  id      String   @id
+  name    String
+  members String[] // email addresses
+
+  projects Project[]
+}
+
+model Project {
+  id          String   @id
+  teamId      String
+  trackId     String
+  title       String
+  summary     String
+  repoUrl     String
+  submittedAt DateTime
+  eventId     String
+
+  team    Team    @relation(fields: [teamId], references: [id])
+  track   Track   @relation(fields: [trackId], references: [id])
+  event   Event   @relation(fields: [eventId], references: [id])
+  scores  Score[]
+  votes   Vote[]
+  comments Comment[]
+}
+
+model Score {
+  id            String   @id @default(uuid())
+  judgeId       String
+  projectId     String
+  functionality Int
+  quality       Int
+  comment       String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  judge   User    @relation(fields: [judgeId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@unique([judgeId, projectId])
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@unique([userId, projectId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String
+  projectId String
+  content   String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+}

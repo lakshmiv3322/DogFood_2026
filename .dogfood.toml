@@ -1,0 +1,21 @@
+[portal]
+base_url = "http://localhost:8080"
+
+[tiers]
+claimed = ["T1", "T2"]
+pitch = "A dark-mode hackathon management portal built with Next.js 14, PostgreSQL, and Prisma. Role-isolated judging, CSV export, and deadline enforcement backed by the fixture event's submissions_close date."
+
+[auth]
+# These are printed by the seed script at startup.
+# Run `docker compose up` then copy them from the logs.
+organizer   = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
+judge_a     = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
+judge_b     = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
+participant = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
+
+[routes]
+gallery      = "/projects"
+submit       = "/projects/new"
+judge_scores = "/api/judge/scores"
+peer_scores  = "/api/judge/scores?judge=jdg_01"
+csv_export   = "/api/export.csv"
