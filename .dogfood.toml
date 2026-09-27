@@ -6,7 +6,6 @@ claimed = ["T1", "T2"]
 pitch = "A dark-mode hackathon management portal built with Next.js 14, PostgreSQL, and Prisma. Role-isolated judging, CSV export, and deadline enforcement backed by the fixture event's submissions_close date."
 
 [auth]
-# Generated and printed by seed script at startup
 organizer   = "Cookie: session=org_dogfood_2026_master"
 judge_a     = "Cookie: session=jdg_a_tomas_varga_2026"
 judge_b     = "Cookie: session=jdg_b_wei_lindqvist_2026"
