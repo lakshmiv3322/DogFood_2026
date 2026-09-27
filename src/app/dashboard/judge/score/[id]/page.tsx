@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getSessionUser, prisma } from "@/lib/db";
 import ScoreForm from "./ScoreForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function ScoreProjectPage({
   params,
 }: {

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrganizerDashboard() {
   const user = await getSessionUser();
   if (!user || user.role !== "ORGANIZER") redirect("/login");

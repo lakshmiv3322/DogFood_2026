@@ -1,16 +1,14 @@
 #!/bin/sh
 set -e
 
-echo "⏳  Waiting for database…"
-until npx prisma db push --skip-generate 2>&1 | grep -q "Your database is now in sync"; do
+echo "⏳  Waiting for database connection..."
+until npx prisma db push --skip-generate --accept-data-loss; do
+  echo "Database is starting up, retrying in 2s..."
   sleep 2
 done
 
-echo "🌱  Seeding fixtures…"
-node -e "
-const { execSync } = require('child_process');
-execSync('npx tsx src/scripts/seed.ts', { stdio: 'inherit' });
-" 2>&1 || node src/scripts/seed.js 2>&1 || true
+echo "🌱  Seeding fixtures..."
+npx tsx src/scripts/seed.ts || true
 
-echo "🚀  Starting Next.js…"
+echo "🚀  Starting Next.js..."
 exec node server.js
