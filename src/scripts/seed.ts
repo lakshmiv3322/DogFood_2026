@@ -71,7 +71,8 @@ async function main() {
   let fixtures: Fixtures | null = null;
   for (const c of candidates) {
     if (fs.existsSync(c)) {
-      fixtures = JSON.parse(fs.readFileSync(c, "utf-8"));
+      const raw = fs.readFileSync(c, "utf-8").replace(/^\uFEFF/, "");
+      fixtures = JSON.parse(raw);
       console.error(`[seed] Loaded fixtures from ${c}`);
       break;
     }
