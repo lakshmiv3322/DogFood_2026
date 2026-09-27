@@ -112,10 +112,10 @@ async function main() {
   // Auth identities — four seeded users with deterministic session tokens
   // ---------------------------------------------------------------------------
   const SESSION = {
-    organizer: `org_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
-    judge_a: `jdg_a_${randomUUID().replace(/-/g, "").slice(0, 10)}`,
-    judge_b: `jdg_b_${randomUUID().replace(/-/g, "").slice(0, 10)}`,
-    participant: `prt_${randomUUID().replace(/-/g, "").slice(0, 12)}`,
+    organizer: process.env.SESSION_ORGANIZER || "org_dogfood_2026_master",
+    judge_a: process.env.SESSION_JUDGE_A || "jdg_a_tomas_varga_2026",
+    judge_b: process.env.SESSION_JUDGE_B || "jdg_b_wei_lindqvist_2026",
+    participant: process.env.SESSION_PARTICIPANT || "prt_dogfood_2026_team",
   };
 
   // Organizer (not in fixture data, we create them)

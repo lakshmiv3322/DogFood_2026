@@ -6,12 +6,11 @@ claimed = ["T1", "T2"]
 pitch = "A dark-mode hackathon management portal built with Next.js 14, PostgreSQL, and Prisma. Role-isolated judging, CSV export, and deadline enforcement backed by the fixture event's submissions_close date."
 
 [auth]
-# These are printed by the seed script at startup.
-# Run `docker compose up` then copy them from the logs.
-organizer   = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
-judge_a     = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
-judge_b     = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
-participant = "Cookie: session=REPLACE_WITH_SEED_OUTPUT"
+# Generated and printed by seed script at startup
+organizer   = "Cookie: session=org_dogfood_2026_master"
+judge_a     = "Cookie: session=jdg_a_tomas_varga_2026"
+judge_b     = "Cookie: session=jdg_b_wei_lindqvist_2026"
+participant = "Cookie: session=prt_dogfood_2026_team"
 
 [routes]
 gallery      = "/projects"
