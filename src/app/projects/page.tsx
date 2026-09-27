@@ -42,7 +42,7 @@ export default async function GalleryPage({
         track: { select: { id: true, name: true } },
         _count: { select: { scores: true } },
       },
-      orderBy: { submittedAt: "desc" },
+      orderBy: { id: "asc" },
       take: PAGE_SIZE,
       skip,
     }),
