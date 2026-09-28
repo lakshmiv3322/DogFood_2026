@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { LoginSchema } from "@/lib/validation";
 
 // ---------------------------------------------------------------------------
 // In-memory rate limiter — tracks failed attempts per (IP + email).
@@ -57,15 +58,18 @@ function clearFailures(key: string): void {
 // ---------------------------------------------------------------------------
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-
-  if (!body?.email || !body?.password) {
+  const result = LoginSchema.safeParse(body);
+  if (!result.success) {
     return NextResponse.json(
-      { error: "email and password are required" },
+      {
+        error: "Validation failed",
+        details: result.error.flatten().fieldErrors,
+      },
       { status: 400 }
     );
   }
 
-  const { email, password } = body as { email: string; password: string };
+  const { email, password } = result.data;
   const rlKey = getRateLimitKey(req, email);
 
   // Check rate limit before any DB hit

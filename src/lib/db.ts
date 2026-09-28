@@ -34,3 +34,24 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   return user as SessionUser | null;
 }
+
+/**
+ * Records an organizer action in the AuditLog table.
+ * Call this from any route that performs a privileged operation.
+ *
+ * @param actorId  - User.id of the organizer performing the action
+ * @param action   - Descriptive event name, e.g. "DELETE_COMMENT"
+ * @param targetId - Optional ID of the affected resource
+ *
+ * NOTE: Wired into T3/T4 routes when those phases are implemented.
+ * Currently the table exists and this helper is ready to use.
+ */
+export async function writeAuditLog(
+  actorId: string,
+  action: string,
+  targetId?: string
+): Promise<void> {
+  await prisma.auditLog.create({
+    data: { actorId, action, targetId: targetId ?? null },
+  });
+}

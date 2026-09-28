@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, prisma } from "@/lib/db";
+import { CoveragePanel } from "./CoveragePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +25,6 @@ export default async function OrganizerDashboard() {
         },
       }),
     ]);
-
-  const coverage =
-    projectCount > 0
-      ? Math.round((scoreCount / projectCount) * 100)
-      : 0;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -80,20 +76,8 @@ export default async function OrganizerDashboard() {
           ))}
         </div>
 
-        {/* Coverage bar */}
-        <div className="border border-[#1b2540] bg-[#0e1428] p-6 mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <p className="font-mono text-xs tracking-widest text-[#6b7a9e] uppercase">Judging Coverage</p>
-            <p className="font-mono text-xs text-[#e6ecff]">{scoreCount} / {projectCount} projects reviewed</p>
-          </div>
-          <div className="h-2 bg-[#1b2540] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[#00e5d0] transition-all duration-500"
-              style={{ width: `${coverage}%` }}
-            />
-          </div>
-          <p className="font-mono text-xs text-[#6b7a9e] mt-2">{coverage}% coverage</p>
-        </div>
+        {/* Coverage bar — live polling via SWR (CoveragePanel is a client component) */}
+        <CoveragePanel />
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Quick actions */}

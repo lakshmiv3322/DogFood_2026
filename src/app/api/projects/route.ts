@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getSessionUser } from "@/lib/db";
+import { ProjectSubmitSchema } from "@/lib/validation";
 
 /**
  * POST /projects/new  (or /api/projects)
@@ -34,9 +35,24 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  if (!body?.title || !body?.trackId || !body?.teamId) {
+  const result = ProjectSubmitSchema.safeParse(body);
+  if (!result.success) {
     return NextResponse.json(
-      { error: "title, trackId, and teamId are required" },
+      {
+        error: "Validation failed",
+        details: result.error.flatten().fieldErrors,
+      },
+      { status: 400 }
+    );
+  }
+
+  const { title, summary, repoUrl } = result.data;
+  const teamId = result.data.teamId ?? body?.teamId;
+  const trackId = result.data.trackId ?? body?.trackId;
+
+  if (!teamId || !trackId) {
+    return NextResponse.json(
+      { error: "teamId and trackId are required" },
       { status: 400 }
     );
   }
@@ -44,11 +60,11 @@ export async function POST(req: NextRequest) {
   const project = await prisma.project.create({
     data: {
       id: `prj_${Date.now()}`,
-      title: body.title,
-      summary: body.summary ?? "",
-      repoUrl: body.repoUrl ?? "",
-      teamId: body.teamId,
-      trackId: body.trackId,
+      title,
+      summary: summary ?? "",
+      repoUrl: repoUrl ?? "",
+      teamId,
+      trackId,
       eventId: event.id,
       submittedAt: now,
     },

@@ -1,107 +1,75 @@
-# ARCHITECTURE.md — DOGFOOD 2026 Portal
+# DOGFOOD 2026 — Architecture Notes
 
-## 1. System Overview
+## Stack Overview
 
-The DOGFOOD 2026 portal is a self-contained, containerized web application engineered for hackathon submissions, judging workflows, and results administration.
-
-```
-                              ┌─────────────────────────────┐
-                              │     Client / run.py         │
-                              └──────────────┬──────────────┘
-                                             │ HTTP (port 8080)
-                                             ▼
-                              ┌─────────────────────────────┐
-                              │  Next.js 14 App Server      │
-                              │  (SSR, Routing, Security)   │
-                              └──────────────┬──────────────┘
-                                             │
-                        ┌────────────────────┴────────────────────┐
-                        ▼                                         ▼
-         ┌─────────────────────────────┐           ┌─────────────────────────────┐
-         │ Public Pages & UI Handlers  │           │ REST / Protected API Routes │
-         │ (/projects, /login, /dash)  │           │ (/api/judge/*, /api/export) │
-         └──────────────┬──────────────┘           └──────────────┬──────────────┘
-                        │                                         │
-                        └────────────────────┬────────────────────┘
-                                             │ Prisma ORM Client
-                                             ▼
-                              ┌─────────────────────────────┐
-                              │     PostgreSQL Database     │
-                              │     (Relational Store)      │
-                              └─────────────────────────────┘
-```
+| Layer | Choice | Why |
+|---|---|---|
+| Framework | Next.js 14 (App Router) | RSC + client components in one repo; `force-dynamic` escapes prerender for DB pages |
+| Database | PostgreSQL 16 (Docker) | Relational integrity; Prisma migrations committed to repo |
+| ORM | Prisma 5 | Type-safe, migration-tracked schema changes; `@@unique` constraint backs upsert |
+| Auth | Session cookie (custom) | Cookie: session=<token> read by `getSessionUser()`; no JWT bloat |
+| Passwords | bcryptjs (10 rounds) | Industry-standard; rate limiter guards brute-force in absence of HSM |
+| Validation | Zod | Schema-first; `safeParse` returns flattened field errors for API consumers |
+| Real-time UX | SWR polling | See note below |
 
 ---
 
-## 2. Technology Choices & Rationale
+## Real-time Updates: Polling over WebSockets/SSE
 
-| Component | Technology | Rationale |
-|-----------|------------|-----------|
-| **Framework** | **Next.js 14 (App Router)** | Unifies server-rendered React components and API route handlers in a single repo. Enables blazing-fast server-rendered gallery pages while retaining dynamic client interactivity. |
-| **Language** | **TypeScript** | Strict compile-time typing prevents subtle attribute errors and aligns data structures precisely with `fixtures.json`. |
-| **Database** | **PostgreSQL 16** | ACID-compliant relational store. Enforces composite unique constraints (e.g. `(judgeId, projectId)`) and cascades, preventing duplicate submissions or review inconsistencies. |
-| **ORM / Data Access** | **Prisma** | Generates fully type-safe query builders from schema models, providing declarative migrations and zero runtime query bugs. |
-| **Styling** | **Tailwind CSS** | Atomic utility architecture with a customized dark palette (`#0a0f1e`, `#ff3d6e`, `#00e5d0`) ensuring consistent, high-contrast, linear-style aesthetics across viewports. |
-| **Deployment** | **Docker Compose** | Bundles application and database containers on an isolated bridge network with zero external cloud dependencies. |
+### Decision
 
----
+Live coverage and judge progress indicators use **SWR client-side polling** rather than WebSockets or Server-Sent Events.
 
-## 3. Security & Role Isolation Model
+### Rationale
 
-### Threat Model & Defense-in-Depth
-A critical requirement of DOGFOOD 2026 (Check #5 & Check #6) is ensuring that judges cannot access peer evaluation scores, and participants cannot access judging APIs.
+| Factor | Polling (chosen) | WebSockets / SSE |
+|---|---|---|
+| Operational complexity | Low — no persistent connection state, no reconnect logic | High — needs sticky sessions or a pub/sub broker (Redis) in multi-replica deploys |
+| Failure modes | Silently stale for one poll interval; self-heals on next tick | Connection drop causes visible errors; requires exponential backoff and manual reconnect |
+| Scale target | ≤ 40 projects, ≤ 30 judges, ≤ 10 concurrent organizers | N/A |
+| Latency | 5–10 s acceptable at hackathon scale | Sub-second; overkill here |
+| Implementation | `useSWR(..., { refreshInterval: 5000 })` — ~3 lines | Separate server process or Next.js route upgrade + client hook |
 
-Many systems make the fatal error of hiding peer scores in UI templates while leaving underlying REST APIs unprotected. Our architecture enforces role isolation **at the HTTP handler level**:
+**At hackathon scale (≤ 40 projects, ≤ 30 judges) a 5-second poll generates at most 6 req/min per organizer — negligible load. The operational simplicity gain far outweighs the latency overhead.**
 
-```
-                       Request: GET /api/judge/scores?judge=jdg_01
-                                       │
-                                       ▼
-                       ┌───────────────────────────────┐
-                       │  Session Cookie Verification   │
-                       └───────────────┬───────────────┘
-                                       │
-                        Valid? ────────┴──────── No ──► 401 Unauthorized
-                          │
-                          ▼
-                       ┌───────────────────────────────┐
-                       │     Role-Based Access Check   │
-                       └───────────────┬───────────────┘
-                                       │
-                     Role == PARTICIPANT? ───── Yes ──► 403 Forbidden
-                          │
-                          ▼ (Role == JUDGE)
-                       ┌───────────────────────────────┐
-                       │   Target Judge ID == Caller?  │
-                       └───────────────┬───────────────┘
-                                       │
-                         No ───────────┴──────────────► 403 Forbidden
-                         │
-                        Yes
-                         ▼
-             Query DB for Caller's Own Scores Only ────► 200 OK (JSON)
-```
+### When to revisit
 
-1. **Authentication**: Handlers inspect the `session` cookie. If missing or invalid, unauthenticated requests to protected endpoints return `401/403`.
-2. **Role Boundaries**:
-   - `ORGANIZER`: Authorized for all aggregations and `/api/export.csv`.
-   - `JUDGE`: Authorized only for `/api/judge/scores` scoped strictly to `user.id`.
-   - `PARTICIPANT`: Rejected from all judge endpoints with `403 Forbidden`.
-3. **Peer Score Lock**: When `?judge=<id>` query parameter is supplied, the server asserts `targetJudge.id === sessionUser.id`. Mismatches immediately terminate with `403 Forbidden`.
+Migrate to SSE (or a managed Realtime service like Supabase Realtime / Pusher) if:
+- Concurrent organizer count exceeds ~50, or
+- Sub-second update latency is required (e.g. live leaderboard on a main screen), or
+- The deployment target has horizontal scaling (multiple app replicas) where an in-memory rate-limit Map and polling state diverge.
 
 ---
 
-## 4. Submission Deadline Architecture
+## Rate Limiting
 
-Event submissions are governed by `Event.submissionsClose` (`2026-03-01T18:00:00Z` from `fixtures.json`).
-- `POST /projects/new` checks `new Date() > event.submissionsClose`.
-- Because the fixture event deadline is set in the past, late submissions are deterministically rejected with `422 Unprocessable Entity` (fulfilling Check #3).
+The login route uses an **in-memory `Map`** keyed by `IP::email`, sliding 5-minute window, 5 attempts max.
+
+> ⚠ **Known limitation**: the Map resets on every server restart, and does not work correctly across multiple app replicas. Before production traffic, replace with a Redis-backed counter (e.g. `ioredis` + `rate-limiter-flexible`, or Upstash Redis with `@upstash/ratelimit`).
 
 ---
 
-## 5. Offline Container Strategy
+## AuditLog
 
-The `docker-compose.yml` specification uses:
-- Built-in multi-stage Docker build producing a lean standalone Node.js artifact.
-- Automated entrypoint script (`docker-entrypoint.sh`) that polls for PostgreSQL readiness, executes `prisma db push`, and runs `seed.ts` before starting the HTTP listener.
-- No remote package downloads or network fetches occur during container runtime.
+An `AuditLog` table and `writeAuditLog(actorId, action, targetId?)` helper exist in `src/lib/db.ts`. It is wired into **T3/T4 organizer routes** (delete comment, publish results) when those phases are implemented. The table is currently idle but schema-committed and migration-tracked.
+
+---
+
+## Session Tokens
+
+Session tokens are **deterministic strings** seeded into the database:
+
+| Role | Session token |
+|---|---|
+| Organizer | `org_dogfood_2026_master` |
+| Judge A | `jdg_a_tomas_varga_2026` |
+| Judge B | `jdg_b_wei_lindqvist_2026` |
+| Participant | `prt_dogfood_2026_team` |
+
+These match the `[auth]` headers in `.dogfood.toml` used by the DOGFOOD checker (`run.py`). The checker never hits `/api/auth/login`; it attaches the cookie header directly. **Do not randomize these tokens** without also updating `.dogfood.toml`.
+
+---
+
+## Migrations
+
+Migrations are committed to `prisma/migrations/` and applied at container startup via `prisma migrate deploy` (in `docker-entrypoint.sh`). Never use `prisma db push` in this repo — it bypasses the migration history.

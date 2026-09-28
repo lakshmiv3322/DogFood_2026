@@ -122,3 +122,15 @@ model Comment {
   user    User    @relation(fields: [userId], references: [id])
   project Project @relation(fields: [projectId], references: [id])
 }
+
+// AuditLog — written whenever an organizer performs a privileged action
+// (e.g. deletes a comment, publishes results). T3/T4 routes will call
+// writeAuditLog() when they are implemented; for now the table exists
+// and is ready to receive rows.
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String   // User.id of the organizer who performed the action
+  action    String   // e.g. "DELETE_COMMENT", "PUBLISH_RESULTS"
+  targetId  String?  // optional ID of the affected resource
+  createdAt DateTime @default(now())
+}

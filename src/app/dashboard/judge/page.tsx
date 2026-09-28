@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSessionUser, prisma } from "@/lib/db";
+import { JudgeProgressBar } from "./JudgeProgressBar";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,9 @@ export default async function JudgeDashboard() {
             </div>
           ))}
         </div>
+
+        {/* Live progress bar — polls /api/judge/scores every 10s */}
+        <JudgeProgressBar totalAssigned={myScores.length + unreviewed.length} />
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Pending reviews */}

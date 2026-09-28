@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getSessionUser } from "@/lib/db";
+import { ProjectSubmitSchema } from "@/lib/validation";
 
 /**
  * POST /projects/new  (HTML form → this handler)
@@ -43,9 +44,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (!body.title) {
-    return NextResponse.json({ error: "title is required" }, { status: 400 });
+  const result = ProjectSubmitSchema.safeParse(body);
+  if (!result.success) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        details: result.error.flatten().fieldErrors,
+      },
+      { status: 400 }
+    );
   }
+
+  const validData = result.data;
 
   // Pick first available track/team if not provided (for the probe request from run.py)
   const track = await prisma.track.findFirst();
@@ -54,11 +64,11 @@ export async function POST(req: NextRequest) {
   const project = await prisma.project.create({
     data: {
       id: `prj_new_${Date.now()}`,
-      title: body.title,
-      summary: body.summary ?? "",
-      repoUrl: body.repo_url ?? "",
-      teamId: body.teamId ?? team?.id ?? "tm_01",
-      trackId: body.trackId ?? track?.id ?? "trk_01",
+      title: validData.title,
+      summary: validData.summary ?? "",
+      repoUrl: validData.repo_url ?? validData.repoUrl ?? "",
+      teamId: validData.teamId ?? team?.id ?? "tm_01",
+      trackId: validData.trackId ?? track?.id ?? "trk_01",
       eventId: event.id,
       submittedAt: now,
     },

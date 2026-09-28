@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, getSessionUser } from "@/lib/db";
+import { ScoreSubmitSchema } from "@/lib/validation";
 
 /**
  * GET /api/judge/scores
@@ -99,31 +100,36 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  if (
-    !body?.projectId ||
-    body.functionality == null ||
-    body.quality == null
-  ) {
+  const result = ScoreSubmitSchema.safeParse(body);
+  if (!result.success) {
     return NextResponse.json(
-      { error: "projectId, functionality, and quality are required" },
+      {
+        error: "Validation failed",
+        details: result.error.flatten().fieldErrors,
+      },
       { status: 400 }
     );
   }
 
-  const score = await prisma.score.upsert({
-    where: { judgeId_projectId: { judgeId: user.id, projectId: body.projectId } },
-    update: {
-      functionality: Number(body.functionality),
-      quality: Number(body.quality),
-      comment: body.comment ?? "",
-    },
-    create: {
-      judgeId: user.id,
-      projectId: body.projectId,
-      functionality: Number(body.functionality),
-      quality: Number(body.quality),
-      comment: body.comment ?? "",
-    },
+  const { projectId, functionality, quality, comment } = result.data;
+
+  // Wrap upsert in transaction to prevent race conditions on concurrent submits
+  const score = await prisma.$transaction(async (tx) => {
+    return tx.score.upsert({
+      where: { judgeId_projectId: { judgeId: user.id, projectId } },
+      update: {
+        functionality,
+        quality,
+        comment,
+      },
+      create: {
+        judgeId: user.id,
+        projectId,
+        functionality,
+        quality,
+        comment,
+      },
+    });
   });
 
   return NextResponse.json({ score }, { status: 201 });

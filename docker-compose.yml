@@ -2,10 +2,8 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: dogfood2026
-      POSTGRES_USER: dogfood
-      POSTGRES_PASSWORD: dogfood_secret
+    env_file:
+      - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -26,7 +24,8 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://dogfood:dogfood_secret@db:5432/dogfood2026
+      # DATABASE_URL is defined in .env — override to use the internal container hostname
+      DATABASE_URL: postgresql://dogfood:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       NODE_ENV: production
       # Enable quick-access demo buttons in the login UI — safe for local/dev only.
       # Do NOT set this to "true" in any production environment.
