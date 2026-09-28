@@ -29,12 +29,13 @@ model Track {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      Role
-  sessionId String?  @unique
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  role         Role
+  sessionId    String?  @unique
+  passwordHash String   @default("")
+  createdAt    DateTime @default(now())
 
   scores     Score[]
   judgeTrack JudgeTrack[]

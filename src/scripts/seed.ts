@@ -12,6 +12,7 @@ import { PrismaClient, Role } from "@prisma/client";
 import { randomUUID } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -118,6 +119,21 @@ async function main() {
     participant: process.env.SESSION_PARTICIPANT || "prt_dogfood_2026_team",
   };
 
+  // Generate random seed-only passwords and hash them (10 salt rounds)
+  const SALT_ROUNDS = 10;
+  const PASSWORDS = {
+    organizer: `org-${randomUUID().slice(0, 8)}`,
+    judge_a: `jdg-${randomUUID().slice(0, 8)}`,
+    judge_b: `jdg-${randomUUID().slice(0, 8)}`,
+    participant: `prt-${randomUUID().slice(0, 8)}`,
+  };
+  const HASHES = {
+    organizer: await bcrypt.hash(PASSWORDS.organizer, SALT_ROUNDS),
+    judge_a: await bcrypt.hash(PASSWORDS.judge_a, SALT_ROUNDS),
+    judge_b: await bcrypt.hash(PASSWORDS.judge_b, SALT_ROUNDS),
+    participant: await bcrypt.hash(PASSWORDS.participant, SALT_ROUNDS),
+  };
+
   // Organizer (not in fixture data, we create them)
   await prisma.user.create({
     data: {
@@ -126,6 +142,7 @@ async function main() {
       name: "Organizer",
       role: Role.ORGANIZER,
       sessionId: SESSION.organizer,
+      passwordHash: HASHES.organizer,
     },
   });
 
@@ -137,6 +154,7 @@ async function main() {
       name: "Participant",
       role: Role.PARTICIPANT,
       sessionId: SESSION.participant,
+      passwordHash: HASHES.participant,
     },
   });
 
@@ -146,8 +164,9 @@ async function main() {
 
   for (const j of fixtures.judges) {
     let sessionId: string | undefined;
-    if (j.id === JUDGE_A_FIXTURE_ID) sessionId = SESSION.judge_a;
-    if (j.id === JUDGE_B_FIXTURE_ID) sessionId = SESSION.judge_b;
+    let passwordHash = "";
+    if (j.id === JUDGE_A_FIXTURE_ID) { sessionId = SESSION.judge_a; passwordHash = HASHES.judge_a; }
+    if (j.id === JUDGE_B_FIXTURE_ID) { sessionId = SESSION.judge_b; passwordHash = HASHES.judge_b; }
 
     await prisma.user.create({
       data: {
@@ -156,6 +175,7 @@ async function main() {
         name: j.name,
         role: Role.JUDGE,
         sessionId: sessionId ?? null,
+        passwordHash,
       },
     });
 
@@ -211,6 +231,18 @@ async function main() {
   console.log(`║  judge_a     = "Cookie: session=${SESSION.judge_a}"`);
   console.log(`║  judge_b     = "Cookie: session=${SESSION.judge_b}"`);
   console.log(`║  participant = "Cookie: session=${SESSION.participant}"`);
+  console.log("╚══════════════════════════════════════════════════════╝\n");
+
+  // ⚠️ SEED-ONLY CREDENTIALS — these are printed once and not stored in plaintext
+  // Use them to log in via the web UI at /login. Do NOT use these in production.
+  console.log("╔══════════════════════════════════════════════════════╗");
+  console.log("║   DOGFOOD 2026 — SEED-ONLY PASSWORDS (web login)    ║");
+  console.log("║   ⚠️  These reset on every `docker compose down -v`  ║");
+  console.log("╠══════════════════════════════════════════════════════╣");
+  console.log(`║  organizer@dogfood.local   →  ${PASSWORDS.organizer}`);
+  console.log(`║  tomas.varga (judge_a)     →  ${PASSWORDS.judge_a}`);
+  console.log(`║  wei.lindqvist (judge_b)   →  ${PASSWORDS.judge_b}`);
+  console.log(`║  participant@dogfood.local →  ${PASSWORDS.participant}`);
   console.log("╚══════════════════════════════════════════════════════╝\n");
 
   console.log(
