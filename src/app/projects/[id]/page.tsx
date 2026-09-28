@@ -106,6 +106,18 @@ export default async function ProjectPage({
               ))}
             </div>
 
+            {/* Team Members */}
+            {project.team.members && project.team.members.length > 0 && (
+              <div>
+                <p className="font-mono text-xs text-[#6b7a9e] tracking-widest uppercase mb-1">
+                  Team Members
+                </p>
+                <p className="font-mono text-xs text-[#aebad6]">
+                  {project.team.members.join(", ")}
+                </p>
+              </div>
+            )}
+
             {/* Repo link */}
             <a
               href={project.repoUrl}
@@ -115,6 +127,12 @@ export default async function ProjectPage({
             >
               View Repository →
             </a>
+
+            {/* Privacy Notice */}
+            <div className="border border-[#1b2540] bg-[#0a0f1e] p-3 text-[11px] font-mono text-[#6b7a9e] leading-relaxed">
+              <span className="text-[#aebad6] uppercase font-bold mr-1">Privacy Notice:</span>
+              Participant emails (team members) and repository URLs are visible to other participants and judges for the duration of the event.
+            </div>
 
             {/* Comments */}
             {project.comments.length > 0 && (

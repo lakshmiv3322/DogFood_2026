@@ -22,11 +22,19 @@ export const ScoreSubmitSchema = z.object({
     .default(""),
 });
 
+const HttpUrlSchema = z
+  .string()
+  .url("Must be a valid URL")
+  .refine(
+    (url) => /^https?:\/\//i.test(url),
+    "URL must use http:// or https://"
+  );
+
 export const ProjectSubmitSchema = z.object({
   title: z.string().min(1, "title is required"),
   summary: z.string().optional().default(""),
-  repo_url: z.string().optional(),
-  repoUrl: z.string().optional(),
+  repo_url: HttpUrlSchema.optional().or(z.literal("")),
+  repoUrl: HttpUrlSchema.optional().or(z.literal("")),
   teamId: z.string().optional(),
   trackId: z.string().optional(),
 });

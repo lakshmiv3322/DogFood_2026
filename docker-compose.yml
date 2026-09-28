@@ -27,9 +27,17 @@ services:
       # DATABASE_URL is defined in .env — override to use the internal container hostname
       DATABASE_URL: postgresql://dogfood:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       NODE_ENV: production
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
       # Enable quick-access demo buttons in the login UI — safe for local/dev only.
       # Do NOT set this to "true" in any production environment.
       NEXT_PUBLIC_DEMO_MODE: "true"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       db:
         condition: service_healthy

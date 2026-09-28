@@ -57,18 +57,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const project = await prisma.project.create({
-    data: {
-      id: `prj_${Date.now()}`,
-      title,
-      summary: summary ?? "",
-      repoUrl: repoUrl ?? "",
-      teamId,
-      trackId,
-      eventId: event.id,
-      submittedAt: now,
-    },
-  });
+  try {
+    const project = await prisma.project.create({
+      data: {
+        id: `prj_${Date.now()}`,
+        title,
+        summary: summary ?? "",
+        repoUrl: repoUrl ?? "",
+        teamId,
+        trackId,
+        eventId: event.id,
+        submittedAt: now,
+      },
+    });
 
-  return NextResponse.json({ project }, { status: 201 });
+    return NextResponse.json({ project }, { status: 201 });
+  } catch (err) {
+    console.error("[Projects] API create error:", err);
+    return NextResponse.json(
+      { error: "Failed to create project" },
+      { status: 500 }
+    );
+  }
 }

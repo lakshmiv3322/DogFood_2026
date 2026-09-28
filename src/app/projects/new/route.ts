@@ -61,20 +61,28 @@ export async function POST(req: NextRequest) {
   const track = await prisma.track.findFirst();
   const team = await prisma.team.findFirst();
 
-  const project = await prisma.project.create({
-    data: {
-      id: `prj_new_${Date.now()}`,
-      title: validData.title,
-      summary: validData.summary ?? "",
-      repoUrl: validData.repo_url ?? validData.repoUrl ?? "",
-      teamId: validData.teamId ?? team?.id ?? "tm_01",
-      trackId: validData.trackId ?? track?.id ?? "trk_01",
-      eventId: event.id,
-      submittedAt: now,
-    },
-  });
+  try {
+    const project = await prisma.project.create({
+      data: {
+        id: `prj_new_${Date.now()}`,
+        title: validData.title,
+        summary: validData.summary ?? "",
+        repoUrl: validData.repo_url ?? validData.repoUrl ?? "",
+        teamId: validData.teamId ?? team?.id ?? "tm_01",
+        trackId: validData.trackId ?? track?.id ?? "trk_01",
+        eventId: event.id,
+        submittedAt: now,
+      },
+    });
 
-  return NextResponse.json({ project }, { status: 201 });
+    return NextResponse.json({ project }, { status: 201 });
+  } catch (err) {
+    console.error("[Projects] Create error:", err);
+    return NextResponse.json(
+      { error: "Failed to create project" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET() {

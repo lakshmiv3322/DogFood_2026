@@ -113,18 +113,19 @@ export async function POST(req: NextRequest) {
 
   const { projectId, functionality, quality, comment } = result.data;
 
-  // Wrap upsert in transaction to prevent race conditions on concurrent submits
-  const score = await prisma.$transaction(async (tx) => {
-    return tx.score.upsert({
-      where: { judgeId_projectId: { judgeId: user.id, projectId } },
-      update: {
-        functionality,
-        quality,
-        comment,
-      },
-      create: {
-        judgeId: user.id,
-        projectId,
+  try {
+    // Wrap upsert in transaction to prevent race conditions on concurrent submits
+    const score = await prisma.$transaction(async (tx) => {
+      return tx.score.upsert({
+        where: { judgeId_projectId: { judgeId: user.id, projectId } },
+        update: {
+          functionality,
+          quality,
+          comment,
+        },
+        create: {
+          judgeId: user.id,
+          projectId,
         functionality,
         quality,
         comment,
@@ -132,5 +133,12 @@ export async function POST(req: NextRequest) {
     });
   });
 
-  return NextResponse.json({ score }, { status: 201 });
+    return NextResponse.json({ score }, { status: 201 });
+  } catch (err) {
+    console.error("[Scores] Upsert error:", err);
+    return NextResponse.json(
+      { error: "Failed to record score" },
+      { status: 500 }
+    );
+  }
 }
