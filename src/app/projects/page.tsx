@@ -137,7 +137,7 @@ export default async function GalleryPage({
                   Project Gallery
                 </h1>
                 <p className="font-mono text-xs text-text-secondary mt-2 max-w-xl">
-                  Explore submissions evaluated by certified judges across technical completeness, architecture, and engineering impact.
+                  Explore submissions evaluated by assigned judges across technical completeness, architecture, and engineering impact.
                 </p>
               </div>
             </div>

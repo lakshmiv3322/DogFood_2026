@@ -54,7 +54,7 @@ export function Header({ user }: HeaderProps) {
               Projects
             </Link>
             <Link
-              href="/projects"
+              href="/projects#tracks"
               className="hover:text-text-primary transition-colors"
             >
               Tracks
@@ -127,12 +127,20 @@ export function Header({ user }: HeaderProps) {
               )}
             </div>
           ) : (
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-md bg-accent px-3 py-1.5 text-xs font-mono font-bold tracking-wider uppercase text-bg-0 hover:bg-accent-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
-            >
-              Sign In
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/signup"
+                className="hidden sm:inline-flex items-center justify-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-mono font-semibold tracking-wider uppercase text-text-primary hover:border-accent hover:text-accent transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                Sign up
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-md bg-accent px-3 py-1.5 text-xs font-mono font-bold tracking-wider uppercase text-bg-0 hover:bg-accent-2 transition-colors focus-visible:ring-2 focus-visible:ring-accent"
+              >
+                Sign In
+              </Link>
+            </div>
           )}
         </div>
       </div>

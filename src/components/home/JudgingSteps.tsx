@@ -21,11 +21,11 @@ export function JudgingSteps() {
     },
     {
       num: "03",
-      title: "Consensus & Certification",
-      desc: "Live coverage telemetry tracks progress, culminating in an authenticated, certified CSV ranking export for organizers.",
+      title: "Consensus & Final Export",
+      desc: "Live coverage telemetry tracks progress, culminating in a structured CSV ranking export for organizers.",
       icon: <FileSpreadsheet className="text-warn" size={24} />,
       animClass: "animate-[pulse_2.5s_ease-in-out_infinite]",
-      badge: "Certified Export",
+      badge: "CSV Export",
     },
   ];
 

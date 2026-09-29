@@ -150,7 +150,7 @@ export function ProjectsToolbar({ tracks, totalResults }: ProjectsToolbarProps) 
       </div>
 
       {/* Track filter chips */}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div id="tracks" className="flex flex-wrap items-center gap-2 pt-1 scroll-mt-24">
         <span className="font-mono text-[11px] text-text-tertiary uppercase tracking-wider flex items-center gap-1.5 mr-1">
           <SlidersHorizontal size={12} />
           <span>Tracks:</span>

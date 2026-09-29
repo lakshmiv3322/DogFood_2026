@@ -65,11 +65,11 @@
 
 * **Visual:** Log in as Organizer (`master@dogfood.local`). Dashboard loads `/dashboard/organizer`.
 * **Audio / Voiceover:**
-  > *"Here is the Organizer Telemetry Cockpit. At the top, KPI cards with lightweight SVG sparklines display submission counts, active judges, and real-time coverage. Notice the live ticker: SWR polls the backend every 5 seconds to provide sub-second visibility into judging progress without full-page reloads.
+  > *"Here is the Organizer Telemetry Cockpit. At the top, KPI cards with lightweight SVG sparklines display submission counts, active judges, and real-time coverage. Notice the live ticker: SWR polls the backend every 5 seconds to provide visibility into judging progress without full-page reloads.
   >
   > Below the KPIs is the Coverage Heatmap matrix. This displays judges against projects using accessible pattern fills alongside color coding. Any submission with zero reviews is highlighted with a critical badge, and single reviews are flagged for peer verification.
   >
-  > Below the heatmap, our data table supports column visibility toggles, multi-column sorting, and keyboard navigation with the up and down arrow keys. Finally, one click on 'Export CSV' streams an authenticated, certified results ledger."*
+  > Below the heatmap, our data table supports column visibility toggles, multi-column sorting, and keyboard navigation with the up and down arrow keys. Finally, one click on 'Export CSV' streams an export of the results ledger."*
 * **Action:**
   1. Highlight the live `Updated Xs ago` ticker.
   2. Hover over matrix cells displaying individual score tooltips.
@@ -82,7 +82,7 @@
 
 * **Visual:** Terminal split screen showing acceptance test suite execution alongside HTTP response verification.
 * **Audio / Voiceover:**
-  > *"Underpinning this user experience is defense-in-depth security. Let's prove cryptographic role isolation. Judge A can only read and mutate their own score records; the backend transaction prevents concurrent double-submissions and strictly forbids inspecting peer reviews before public publish.
+  > *"Underpinning this user experience is defense-in-depth security. Let's demonstrate server-side role isolation. Judge A can only read and mutate their own score records; the backend transaction prevents concurrent double-submissions and strictly isolates peer reviews.
   >
   > When a participant attempts to access scoring or administrative endpoints, the server returns an immediate 403 Forbidden.
   >

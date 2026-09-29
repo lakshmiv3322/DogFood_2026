@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { ArrowLeft, ArrowRight, AlertCircle, ChevronDown, ChevronUp, KeyRound } from "lucide-react";
 
 const DEMO_ACCOUNTS = [
   {
@@ -33,144 +37,161 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showDemo, setShowDemo] = useState(false);
 
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
-  async function handleLogin(loginEmail: string, loginPassword?: string) {
-    if (!loginPassword) {
-      setError("Password is required");
+  async function handleLogin(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (!email.trim() || !password) {
+      setError("Email and password are required");
       return;
     }
+
     setLoading(true);
     setError("");
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
+
       const data = await res.json();
+
       if (!res.ok) {
-        setError(data.error ?? "Login failed");
+        setError(data.error ?? "Invalid email or password");
         return;
       }
+
       // Redirect based on role
       if (data.role === "ORGANIZER") router.push("/dashboard/organizer");
       else if (data.role === "JUDGE") router.push("/dashboard/judge");
       else router.push("/projects");
     } catch {
-      setError("Network error");
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-bg-1">
       <div className="w-full max-w-md">
         <Link
           href="/"
-          className="inline-block font-mono text-xs tracking-widest text-[#00e5d0] uppercase mb-8 hover:text-[#e6ecff] transition-colors"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-accent transition-colors mb-6"
         >
-          ← DOGFOOD 2026
+          <ArrowLeft size={14} />
+          <span>DOGFOOD 2026</span>
         </Link>
 
-        <div className="border border-[#1b2540] bg-[#0e1428] p-8">
-          <p className="font-mono text-xs tracking-widest text-[#ff3d6e] uppercase mb-2">
-            [ Sign In ]
-          </p>
-          <h1 className="font-black text-3xl uppercase tracking-tight text-[#e6ecff] mb-6">
-            Your Portal
-          </h1>
+        {/* Main Product Sign-in Card */}
+        <Card className="border-border bg-surface shadow-md">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl uppercase">Sign In</CardTitle>
+            <CardDescription>
+              Enter your credentials to access your judging queue or team dashboard.
+            </CardDescription>
+          </CardHeader>
 
-          {/* Quick-access demo accounts — only rendered when NEXT_PUBLIC_DEMO_MODE=true */}
-          {isDemoMode && (
-            <div className="mb-6">
-              <p className="font-mono text-xs text-[#6b7a9e] uppercase tracking-widest mb-1">
-                Quick access
-              </p>
-              <p className="font-mono text-[10px] text-[#3a4a70] mb-3">
-                ⚠ Demo mode — check container logs for seed passwords
-              </p>
-              <div className="flex flex-col gap-2">
+          <CardContent>
+            {error && (
+              <div className="mb-5 flex items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 p-3 font-mono text-xs text-danger">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              <Input
+                label="Email Address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.org"
+                required
+              />
+
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                isLoading={loading}
+                className="w-full gap-2 mt-2"
+              >
+                <span>Sign In</span>
+                <ArrowRight size={16} />
+              </Button>
+            </form>
+          </CardContent>
+
+          <CardFooter className="pt-2 border-t border-border/60 flex items-center justify-center">
+            <p className="font-mono text-xs text-text-tertiary">
+              New team?{" "}
+              <Link href="/signup" className="text-accent hover:underline font-bold">
+                Create an account →
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+
+        {/* Small Disclosure Below Sign-In Card: Only shows if clicked */}
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => setShowDemo(!showDemo)}
+            className="inline-flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent rounded p-1"
+          >
+            <KeyRound size={13} />
+            <span>Judging this submission? View demo credentials</span>
+            {showDemo ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          </button>
+
+          {showDemo && (
+            <div className="mt-4 rounded-xl border border-border bg-surface-2 p-5 text-left space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-text-primary uppercase tracking-wider text-[11px]">
+                  Preset Evaluator Accounts
+                </span>
+                <span className="text-[10px] text-text-tertiary">Prefill only</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {DEMO_ACCOUNTS.map((acc) => (
                   <button
                     key={acc.email}
+                    type="button"
                     onClick={() => {
                       setEmail(acc.email);
                       setError("Enter the seed password printed in docker logs, then click Sign In.");
                     }}
-                    disabled={loading}
-                    className="flex items-center justify-between border border-[#1b2540] px-4 py-3 text-left hover:border-[#2b3a60] transition-colors disabled:opacity-50 group"
+                    className="flex items-center justify-between border border-border bg-surface px-3 py-2 rounded-lg text-left hover:border-accent/40 transition-colors"
                   >
-                    <span
-                      className="font-mono text-xs"
-                      style={{ color: acc.color }}
-                    >
+                    <span className="text-[11px] font-bold truncate" style={{ color: acc.color }}>
                       {acc.label}
                     </span>
-                    <span className="font-mono text-xs text-[#3a4a70] group-hover:text-[#6b7a9e] transition-colors">
-                      prefill →
-                    </span>
+                    <span className="text-[10px] text-text-tertiary">prefill →</span>
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-3 my-6">
-                <div className="flex-1 h-px bg-[#1b2540]" />
-                <span className="font-mono text-xs text-[#3a4a70]">or enter credentials</span>
-                <div className="flex-1 h-px bg-[#1b2540]" />
-              </div>
+
+              <p className="text-[11px] text-text-tertiary pt-2 border-t border-border/60">
+                Passwords are printed by the seed script at startup in container stdout.
+              </p>
             </div>
           )}
-
-          {/* Login form */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleLogin(email, password);
-            }}
-          >
-            <label className="block font-mono text-xs text-[#6b7a9e] tracking-widest uppercase mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="w-full bg-[#0a0f1e] border border-[#1b2540] text-[#e6ecff] font-mono text-xs px-3 py-3 focus:outline-none focus:border-[#00e5d0] placeholder:text-[#3a4a70] mb-4"
-              required
-            />
-
-            <label className="block font-mono text-xs text-[#6b7a9e] tracking-widest uppercase mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full bg-[#0a0f1e] border border-[#1b2540] text-[#e6ecff] font-mono text-xs px-3 py-3 focus:outline-none focus:border-[#00e5d0] placeholder:text-[#3a4a70] mb-4"
-              required
-            />
-
-            {error && (
-              <p className="font-mono text-xs text-[#ff3d6e] mb-4">{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || !email || !password}
-              className="w-full bg-[#ff3d6e] text-[#0a0f1e] font-mono font-bold text-xs tracking-widest uppercase px-4 py-3 hover:bg-[#e6ecff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Signing in…" : "Sign In →"}
-            </button>
-          </form>
         </div>
-
-        <p className="font-mono text-xs text-[#3a4a70] text-center mt-6">
-          Auth is session-based. Passwords are printed by the seed script at startup.
-        </p>
       </div>
     </div>
   );

@@ -39,6 +39,16 @@ export const ProjectSubmitSchema = z.object({
   trackId: z.string().optional(),
 });
 
+export const RegisterSchema = z.object({
+  teamName: z
+    .string()
+    .min(2, "Team name must be at least 2 characters")
+    .max(60, "Team name cannot exceed 60 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 export type LoginInput = z.infer<typeof LoginSchema>;
+export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type ScoreSubmitInput = z.infer<typeof ScoreSubmitSchema>;
 export type ProjectSubmitInput = z.infer<typeof ProjectSubmitSchema>;

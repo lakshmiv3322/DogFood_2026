@@ -103,7 +103,7 @@ export default async function Home() {
 
                 {/* One-line subhead */}
                 <p className="font-mono text-sm sm:text-base text-text-secondary leading-relaxed mb-8 max-w-xl">
-                  Autonomous hackathon evaluation engine with transactional blind judging, live coverage telemetry, and certified results.
+                  Hackathon evaluation portal with transactional scoring, live coverage telemetry, and per-judge score isolation.
                 </p>
 
                 {/* Call to Actions */}
@@ -135,7 +135,7 @@ export default async function Home() {
                     icon: <Trophy size={16} className="text-accent" />,
                   },
                   {
-                    label: "Certified Judges",
+                    label: "Assigned Judges",
                     value: judgeCount,
                     icon: <Users size={16} className="text-accent" />,
                   },
@@ -250,7 +250,7 @@ export default async function Home() {
                   How Judging Works
                 </h2>
                 <p className="font-mono text-xs text-text-secondary leading-relaxed">
-                  Rigorous evaluation integrity enforced through cryptographic role isolation, blind peer reviews, and atomic score transactions.
+                  Evaluation integrity enforced through server-side role checks, per-judge score isolation, and atomic database transactions.
                 </p>
               </div>
             </ScrollReveal>
@@ -279,7 +279,7 @@ export default async function Home() {
                   </div>
 
                   <p className="font-mono text-xs text-text-secondary leading-relaxed">
-                    Say goodbye to messy spreadsheets and scoring conflicts. The DOGFOOD 2026 organizer cockpit tracks real-time progress across all judging pools with sub-second synchronization.
+                    Say goodbye to messy spreadsheets and scoring conflicts. The DOGFOOD 2026 organizer cockpit tracks real-time progress across all judging pools with live polling every 5 seconds.
                   </p>
 
                   <div className="space-y-3 font-mono text-xs text-text-secondary">
@@ -289,11 +289,11 @@ export default async function Home() {
                     </div>
                     <div className="flex items-start gap-2.5">
                       <CheckCircle2 size={16} className="text-success shrink-0 mt-0.5" />
-                      <span>Blind score isolation: judges cannot inspect peer evaluations until publish.</span>
+                      <span>Per-judge score isolation: judges cannot inspect or modify peer evaluations.</span>
                     </div>
                     <div className="flex items-start gap-2.5">
                       <CheckCircle2 size={16} className="text-success shrink-0 mt-0.5" />
-                      <span>Instant one-click certified CSV export for final awards calculation.</span>
+                      <span>Instant one-click CSV export for final awards calculation.</span>
                     </div>
                   </div>
 

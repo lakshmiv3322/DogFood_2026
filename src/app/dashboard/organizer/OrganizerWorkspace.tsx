@@ -193,7 +193,7 @@ export function OrganizerWorkspace({
               Organizer Telemetry Cockpit
             </h1>
             <p className="font-mono text-xs text-text-secondary mt-1">
-              Real-time audit overview, judging coverage matrix, and certified data export.
+              Real-time audit overview, judging coverage matrix, and CSV data export.
             </p>
           </div>
 

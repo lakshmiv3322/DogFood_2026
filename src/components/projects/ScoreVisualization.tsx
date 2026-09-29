@@ -38,7 +38,7 @@ export function ScoreVisualization({
           Not Yet Reviewed
         </h3>
         <p className="font-mono text-xs text-text-tertiary max-w-xs mx-auto">
-          Judges have not submitted evaluations for this project yet. Scores will be published once certified.
+          Judges have not submitted evaluations for this project yet. Scores will appear once reviews are completed.
         </p>
       </div>
     );
