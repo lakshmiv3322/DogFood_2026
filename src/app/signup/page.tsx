@@ -91,7 +91,7 @@ export default function SignupPage() {
       router.refresh();
 
       setTimeout(() => {
-        router.push("/projects");
+        window.location.href = "/dashboard/participant";
       }, 1000);
     } catch {
       setServerError("Network error. Please verify your connection.");

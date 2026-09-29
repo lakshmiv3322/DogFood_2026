@@ -18,7 +18,7 @@ export function Footer() {
               <span>DOGFOOD 2026</span>
             </Link>
             <p className="text-xs text-text-tertiary leading-relaxed mb-4">
-              Autonomous hackathon evaluation and project showcase platform. Built with real-time scoring, secure role isolation, and verifiable results.
+              Autonomous hackathon evaluation and project showcase platform. Built with real-time scoring, secure role isolation, and structured results export.
             </p>
             <div className="flex items-center gap-2 text-[11px] font-mono text-text-tertiary">
               <span className="inline-block h-2 w-2 rounded-full bg-success animate-pulse" />
@@ -38,8 +38,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/projects" className="hover:text-text-primary transition-colors">
-                  Tracks & Categories
+                <Link href="/projects#tracks" className="hover:text-text-primary transition-colors">
+                  Tracks &amp; Categories
                 </Link>
               </li>
               <li>
@@ -55,30 +55,30 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Event links */}
+          {/* Participate links — replaces dead /#schedule/#rules/#faq anchors */}
           <div>
             <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-text-primary mb-3">
-              Event
+              Participate
             </h3>
             <ul className="space-y-2 text-xs">
               <li>
-                <a href="/#schedule" className="hover:text-text-primary transition-colors">
-                  Schedule & Deadlines
+                <Link href="/signup" className="hover:text-text-primary transition-colors">
+                  Register a Team
+                </Link>
+              </li>
+              <li>
+                <Link href="/projects" className="hover:text-text-primary transition-colors">
+                  Browse Submissions
+                </Link>
+              </li>
+              <li>
+                <a href="/#judging" className="hover:text-text-primary transition-colors">
+                  Evaluation Criteria
                 </a>
               </li>
               <li>
-                <a href="/#rules" className="hover:text-text-primary transition-colors">
-                  Submission Rules
-                </a>
-              </li>
-              <li>
-                <a href="/#faq" className="hover:text-text-primary transition-colors">
-                  Participant FAQ
-                </a>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-text-primary transition-colors">
-                  Organizer Access
+                <Link href="/accessibility" className="hover:text-text-primary transition-colors">
+                  Accessibility
                 </Link>
               </li>
             </ul>
@@ -87,7 +87,7 @@ export function Footer() {
           {/* Legal / Policy */}
           <div>
             <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-text-primary mb-3">
-              Legal & Privacy
+              Legal &amp; Privacy
             </h3>
             <ul className="space-y-2 text-xs">
               <li>

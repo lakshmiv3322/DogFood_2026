@@ -339,6 +339,11 @@ export default async function Home() {
                         <ArrowRight size={16} />
                       </Button>
                     </Link>
+                    <Link href="/signup">
+                      <Button size="lg" variant="secondary" className="gap-2 border-accent/40 hover:border-accent">
+                        <span>Register a Team</span>
+                      </Button>
+                    </Link>
                     <Link href="/login">
                       <Button size="lg" variant="secondary">
                         Judge &amp; Team Login

@@ -267,7 +267,7 @@ export function JudgeQueueView({ projects, judgeName }: JudgeQueueViewProps) {
                   </div>
                   {selectedProject.comment && (
                     <div className="pt-2 border-t border-border/40 text-[11px] text-text-secondary italic">
-                      "{selectedProject.comment}"
+                      &ldquo;{selectedProject.comment}&rdquo;
                     </div>
                   )}
                 </div>

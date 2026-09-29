@@ -4,6 +4,7 @@ import { Header } from "@/components/shell/Header";
 import { Footer } from "@/components/shell/Footer";
 import { Container } from "@/components/shell/Container";
 import { JudgeQueueView, QueueProject } from "./JudgeQueueView";
+import { JudgeQueueRefresher } from "./JudgeQueueRefresher";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,7 @@ export default async function JudgeDashboard() {
 
       <main className="flex-1 py-10">
         <Container size="xl">
+          <JudgeQueueRefresher />
           <JudgeQueueView
             projects={queueProjects}
             judgeName={user.name}

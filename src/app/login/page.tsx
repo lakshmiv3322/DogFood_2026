@@ -39,8 +39,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [showDemo, setShowDemo] = useState(false);
 
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
-
   async function handleLogin(e?: React.FormEvent) {
     if (e) e.preventDefault();
     if (!email.trim() || !password) {
@@ -68,7 +66,8 @@ export default function LoginPage() {
       // Redirect based on role
       if (data.role === "ORGANIZER") router.push("/dashboard/organizer");
       else if (data.role === "JUDGE") router.push("/dashboard/judge");
-      else router.push("/projects");
+      else router.push("/dashboard/participant");
+      router.refresh();
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -136,13 +135,16 @@ export default function LoginPage() {
             </form>
           </CardContent>
 
-          <CardFooter className="pt-2 border-t border-border/60 flex items-center justify-center">
+          <CardFooter className="pt-2 border-t border-border/60 flex flex-col items-center gap-1">
             <p className="font-mono text-xs text-text-tertiary">
               New team?{" "}
               <Link href="/signup" className="text-accent hover:underline font-bold">
                 Create an account →
               </Link>
             </p>
+            <Link href="/forgot-password" className="font-mono text-xs text-text-tertiary hover:text-accent transition-colors mt-1">
+              Forgot your password?
+            </Link>
           </CardFooter>
         </Card>
 

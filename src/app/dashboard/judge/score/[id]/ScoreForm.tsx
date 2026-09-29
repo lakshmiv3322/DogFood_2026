@@ -288,7 +288,7 @@ export default function ScoreForm({
             Weighted Score Total (50% / 50%)
           </span>
           <span className="font-mono text-[11px] text-text-secondary">
-            Keys 0–9 set score · Enter to submit
+            Keys 0–9 set score · Ctrl+Enter to submit
           </span>
         </div>
         <div className="text-right">
