@@ -1,197 +1,206 @@
 import Link from "next/link";
-import { prisma } from "@/lib/db";
+import { prisma, getSessionUser } from "@/lib/db";
+import { Header } from "@/components/shell/Header";
+import { Footer } from "@/components/shell/Footer";
+import { Container } from "@/components/shell/Container";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { ArrowRight, Trophy, Users, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [event, projectCount, trackCount] = await Promise.all([
+  const [event, projectCount, trackCount, user] = await Promise.all([
     prisma.event.findFirst(),
     prisma.project.count(),
     prisma.track.count(),
+    getSessionUser(),
   ]);
 
   const isOpen = event ? new Date() < event.submissionsClose : false;
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Nav */}
-      <header className="sticky top-0 z-50 border-b border-[#1b2540] bg-[#0a0f1e]/90 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-xs tracking-widest text-[#00e5d0] uppercase">
-              DOGFOOD
-            </span>
-            <span className="w-px h-4 bg-[#1b2540]" />
-            <span className="font-mono text-xs tracking-widest text-[#6b7a9e] uppercase">
-              2026
-            </span>
-          </div>
-          <nav className="flex items-center gap-6">
-            <Link
-              href="/projects"
-              className="font-mono text-xs tracking-widest text-[#6b7a9e] hover:text-[#e6ecff] uppercase transition-colors"
-            >
-              Gallery
-            </Link>
-            <Link
-              href="/login"
-              className="font-mono text-xs tracking-widest bg-[#ff3d6e] text-[#0a0f1e] px-3 py-1.5 hover:bg-[#e6ecff] transition-colors uppercase"
-            >
-              Sign In
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col bg-bg-1">
+      <Header user={user} />
 
-      {/* Hero */}
       <main className="flex-1">
-        <section className="relative overflow-hidden border-b border-[#1b2540] px-4 sm:px-6 py-24 sm:py-36">
-          {/* Grid bg */}
-          <div
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage:
-                "linear-gradient(90deg,rgba(230,236,255,.04) 1px,transparent 1px),linear-gradient(0deg,rgba(230,236,255,.04) 1px,transparent 1px)",
-              backgroundSize: "calc(100%/12) 120px",
-            }}
-          />
-
-          <div className="relative max-w-7xl mx-auto">
-            <p className="font-mono text-xs tracking-widest text-[#ff3d6e] uppercase mb-6">
-              [ DOGFOOD 2026 · HACKATHON PORTAL ]
-            </p>
-            <h1 className="font-black text-5xl sm:text-7xl lg:text-8xl leading-none tracking-tight uppercase text-[#e6ecff] mb-6">
-              Build.
-              <br />
-              Judge.
-              <br />
-              <span className="text-[#00e5d0]">Ship.</span>
-            </h1>
-            <p className="max-w-lg font-mono text-sm text-[#aebad6] leading-relaxed mb-10">
-              The central portal for{" "}
-              <span className="text-[#e6ecff]">{event?.name ?? "Sample Hack 2026"}</span>.
-              Browse submissions, assign judges, score projects, and export
-              results — all in one place.
-            </p>
-
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/projects"
-                className="inline-flex items-center gap-2 bg-[#ff3d6e] text-[#0a0f1e] font-mono font-bold text-xs tracking-widest uppercase px-5 py-3 hover:bg-[#e6ecff] transition-colors"
-              >
-                Browse Gallery →
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 border border-[#ff3d6e] text-[#ff3d6e] font-mono font-bold text-xs tracking-widest uppercase px-5 py-3 hover:bg-[#ff3d6e] hover:text-[#0a0f1e] transition-colors"
-              >
-                Sign In →
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats bar */}
-        <section className="border-b border-[#1b2540] bg-[#0e1428]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-2 sm:grid-cols-4 gap-px bg-[#1b2540]">
-            {[
-              { label: "Projects", value: projectCount },
-              { label: "Tracks", value: trackCount },
-              {
-                label: "Status",
-                value: isOpen ? "Open" : "Closed",
-                accent: isOpen ? "#00e5d0" : "#ff3d6e",
-              },
-              {
-                label: "Deadline",
-                value: event
-                  ? new Date(event.submissionsClose).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric" }
-                    )
-                  : "—",
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-[#0e1428] px-6 py-5 flex flex-col gap-1"
-              >
-                <span className="font-mono text-xs text-[#6b7a9e] tracking-widest uppercase">
-                  {stat.label}
-                </span>
-                <span
-                  className="font-black text-2xl"
-                  style={{ color: stat.accent ?? "#e6ecff" }}
-                >
-                  {stat.value}
+        {/* Hero Section */}
+        <section className="relative overflow-hidden border-b border-border py-20 sm:py-28">
+          <Container size="xl">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-3 mb-6">
+                <Badge variant={isOpen ? "accent" : "danger"}>
+                  {isOpen ? "Submissions Open" : "Submissions Closed"}
+                </Badge>
+                <span className="font-mono text-xs text-text-tertiary">
+                  {event?.name ?? "DOGFOOD Hackathon 2026"}
                 </span>
               </div>
-            ))}
-          </div>
-        </section>
 
-        {/* CTA cards */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-          <div className="grid sm:grid-cols-3 gap-px bg-[#1b2540]">
-            {[
-              {
-                role: "Participant",
-                desc: "Browse the gallery, submit your project before the deadline, and track your team's progress.",
-                cta: "Browse Gallery",
-                href: "/projects",
-                color: "#aebad6",
-              },
-              {
-                role: "Judge",
-                desc: "Review assigned projects, submit scores across the rubric, and track your judging progress.",
-                cta: "Judge Dashboard",
-                href: "/login",
-                color: "#00e5d0",
-              },
-              {
-                role: "Organizer",
-                desc: "Oversee all submissions, manage tracks, export scores as CSV, and publish final results.",
-                cta: "Organizer Panel",
-                href: "/login",
-                color: "#ff3d6e",
-              },
-            ].map((card) => (
-              <div
-                key={card.role}
-                className="bg-[#0e1428] p-8 flex flex-col gap-4"
-              >
-                <p
-                  className="font-mono text-xs tracking-widest uppercase"
-                  style={{ color: card.color }}
-                >
-                  [ {card.role} ]
-                </p>
-                <p className="font-mono text-sm text-[#aebad6] leading-relaxed flex-1">
-                  {card.desc}
-                </p>
-                <Link
-                  href={card.href}
-                  className="font-mono text-xs tracking-widest uppercase text-[#6b7a9e] hover:text-[#e6ecff] transition-colors"
-                >
-                  {card.cta} →
+              <h1 className="font-display text-5xl sm:text-7xl font-black uppercase tracking-tight text-text-primary leading-none mb-6">
+                Autonomous
+                <br />
+                Hackathon
+                <br />
+                <span className="text-accent">Portal.</span>
+              </h1>
+
+              <p className="font-mono text-sm text-text-secondary leading-relaxed mb-8 max-w-xl">
+                The centralized evaluation portal for {event?.name ?? "Sample Hack 2026"}. Submit engineering projects, coordinate distributed judges, record real-time scores, and certify final rankings.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <Link href="/projects">
+                  <Button size="lg" variant="primary" className="gap-2">
+                    <span>Browse Gallery</span>
+                    <ArrowRight size={16} aria-hidden />
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="lg" variant="secondary">
+                    Portal Login
+                  </Button>
                 </Link>
               </div>
-            ))}
-          </div>
+            </div>
+          </Container>
+        </section>
+
+        {/* Stats Row */}
+        <section className="border-b border-border bg-surface">
+          <Container size="xl" className="py-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { label: "Submitted Projects", value: projectCount, icon: <Trophy size={18} className="text-accent" /> },
+                { label: "Competitive Tracks", value: trackCount, icon: <Users size={18} className="text-accent" /> },
+                {
+                  label: "Portal Status",
+                  value: isOpen ? "Live / Open" : "Locked",
+                  color: isOpen ? "text-accent" : "text-danger",
+                  icon: <ShieldCheck size={18} className={isOpen ? "text-accent" : "text-danger"} />,
+                },
+                {
+                  label: "Submission Window",
+                  value: event
+                    ? new Date(event.submissionsClose).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "—",
+                  icon: <CheckCircle2 size={18} className="text-accent" />,
+                },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    {stat.icon}
+                    <span className="font-mono text-xs uppercase tracking-wider text-text-tertiary">
+                      {stat.label}
+                    </span>
+                  </div>
+                  <span className={`font-display text-2xl sm:text-3xl font-bold ${stat.color ?? "text-text-primary"}`}>
+                    {stat.value}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Container>
+        </section>
+
+        {/* Role Cards */}
+        <section className="py-16 sm:py-24">
+          <Container size="xl">
+            <div className="mb-12">
+              <h2 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-text-primary mb-2">
+                Participant &amp; Evaluator Workflows
+              </h2>
+              <p className="font-mono text-xs text-text-tertiary">
+                Dedicated interfaces with cryptographic role separation.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card hover>
+                <CardHeader>
+                  <Badge variant="default" className="w-fit mb-2">
+                    Participant
+                  </Badge>
+                  <CardTitle>Team Submissions</CardTitle>
+                  <CardDescription>
+                    Explore all public projects, register repository URLs and track tags before the certified deadline.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/projects" className="font-mono text-xs text-accent hover:underline inline-flex items-center gap-1">
+                    <span>Explore Gallery</span>
+                    <ArrowRight size={14} aria-hidden />
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card hover>
+                <CardHeader>
+                  <Badge variant="accent" className="w-fit mb-2">
+                    Judge
+                  </Badge>
+                  <CardTitle>Score Rubrics</CardTitle>
+                  <CardDescription>
+                    Blind evaluation interface with optimistic updates, transactional upserts, and progress tracking.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/login" className="font-mono text-xs text-accent hover:underline inline-flex items-center gap-1">
+                    <span>Judge Login</span>
+                    <ArrowRight size={14} aria-hidden />
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card hover>
+                <CardHeader>
+                  <Badge variant="danger" className="w-fit mb-2">
+                    Organizer
+                  </Badge>
+                  <CardTitle>Event Administration</CardTitle>
+                  <CardDescription>
+                    Real-time SWR coverage telemetry, audit logs, and certified CSV export of hackathon rankings.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Link href="/login" className="font-mono text-xs text-danger hover:underline inline-flex items-center gap-1">
+                    <span>Organizer Console</span>
+                    <ArrowRight size={14} aria-hidden />
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
+          </Container>
+        </section>
+
+        {/* Judging Details Section anchor */}
+        <section id="judging" className="border-t border-border bg-surface py-16">
+          <Container size="md">
+            <h2 className="font-display text-2xl font-black uppercase text-text-primary tracking-tight mb-4">
+              How Judging Works
+            </h2>
+            <div className="space-y-4 text-xs font-mono text-text-secondary leading-relaxed">
+              <p>
+                Each submitted project is assigned to certified judges based on track expertise. Evaluations are scored across two primary quantitative axes:
+              </p>
+              <ul className="list-disc pl-5 space-y-2 text-text-tertiary">
+                <li><strong className="text-text-primary">Functionality (0 - 10)</strong>: Operational stability, feature completeness, and technical execution.</li>
+                <li><strong className="text-text-primary">Code Quality &amp; Architecture (0 - 10)</strong>: Code structure, maintainability, documentation, and engineering design.</li>
+              </ul>
+              <p>
+                Judges cannot view scores submitted by peers during the active judging phase. All scores are upserted transactionally with immediate optimistic UI feedback and automatic rollback protection.
+              </p>
+            </div>
+          </Container>
         </section>
       </main>
 
-      <footer className="border-t border-[#1b2540] px-4 sm:px-6 py-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <span className="font-mono text-xs text-[#6b7a9e]">
-            DOGFOOD 2026 · Hackathon Raptors
-          </span>
-          <span className="font-mono text-xs text-[#3a4a70]">
-            {event?.name ?? "Sample Hack 2026"}
-          </span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
