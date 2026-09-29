@@ -1,71 +1,150 @@
-# DOGFOOD 2026 — Modern Hackathon Judging & Showcase Portal
+# DOGFOOD 2026 — Hackathon Management Portal
 
-A production-grade, commercial hackathon management portal engineered for DOGFOOD 2026. Designed with an ultra-clean, dark Linear-inspired SaaS aesthetic, strict role-based access control, deadline enforcement, real-time rubric evaluation, and automated acceptance verification.
+> A production-grade, full-stack hackathon platform — not a demo, an actual product.
 
----
-
-## What It Does
-
-- **Public Gallery**: Fast, filterable showcase of all submitted projects with live search across titles and summaries, track filtering, and pagination.
-- **Deadline-Enforced Submissions**: Enforces event closing times directly at the API and database levels. Submissions past `submissions_close` are rejected with `4xx`.
-- **Role Isolation & Judging Engine**:
-  - Independent evaluation dashboards for judges.
-  - Granular backend security: judges can exclusively access and modify their own scores (`/api/judge/scores`).
-  - Attempting to inspect a peer judge's scores (`/api/judge/scores?judge=...`) returns `403 Forbidden` at the HTTP layer, not merely hidden in HTML templates.
-- **Organizer Intelligence & Export**:
-  - Aggregated submission counts, track distributions, and reviewer coverage metrics.
-  - One-click RFC 4180 compliant CSV export (`/api/export.csv`) for downstream tabulation.
-- **Self-Contained & Deterministic**: Runs fully offline with `docker compose up`. No third-party cloud dependencies, external telemetry, or hosted databases.
+Built with **Next.js 14**, **PostgreSQL**, **Prisma**, and **Three.js**. Features role-isolated dashboards, real-time judging, participant registration, leaderboards, CSV exports, and a 3D hero landing page. Runs fully offline with a single Docker command.
 
 ---
 
-## Quickstart
+## ✨ Features
 
-### 1. Prerequisites
-- Docker & Docker Compose **or** Node.js 18+ and PostgreSQL
+### 🌐 Public
+- **3D Hero Landing Page** — Animated Three.js canvas, live stats strip, public leaderboard, judging timeline
+- **Project Gallery** — Server-rendered, filterable by track, paginated — titles in initial HTML (SEO-ready)
+- **Project Detail Pages** — Scores, feedback, team info, prev/next navigation
 
-### 2. Run with Docker (Recommended)
-Bring up the entire portal and database with a single command:
+### 🔐 Authentication
+- **Participant self-registration** — `/signup` creates a Team + User in a single transaction
+- **Forgot password** — Token-based reset flow; in demo mode the link appears on-screen (no email server needed)
+- **Role-based routing** — Organizer → cockpit, Judge → queue, Participant → personal dashboard
+- **Session cookies** — HttpOnly, 7-day expiry, no JWT library dependency
+
+### 👥 Participant Dashboard (`/dashboard/participant`)
+- Team status card, submission details, track badge, repo link
+- Anonymized judge feedback with per-criterion scores and comments
+- Live leaderboard (top 5) with own team highlighted and rank shown
+
+### ⚖️ Judge Dashboard (`/dashboard/judge`)
+- Queue view with pending / done filter tabs and progress ring
+- Per-project scoring form — 0–10 segmented buttons, autosave draft, Ctrl+Enter to submit
+- Auto-refreshes every 10 seconds — no page reload needed
+
+### 🏢 Organizer Cockpit (`/dashboard/organizer`)
+- KPI row: total projects, judge coverage %, average score (computed from real data), scored count
+- SWR live polling every 5 seconds with "updated Xs ago" indicator
+- Coverage heatmap (judge × project matrix), sortable data table
+- One-click CSV export (`/api/export.csv`)
+
+### 🔒 Security
+- Judges can only read/write their own scores — peer score inspection returns `403`
+- Participants are blocked from `/api/judge/*` routes
+- Deadline enforcement at API level — closed events reject submissions with `4xx`
+- bcryptjs password hashing (cost factor 12)
+
+---
+
+## 🚀 Quickstart
+
+### Docker (Recommended — fully offline)
 ```bash
 docker compose up --build
 ```
-The portal starts at **`http://localhost:8080`**.
+Portal available at **`http://localhost:8080`**
 
-### 3. Running Acceptance Checker
-In a separate terminal, execute the standard DOGFOOD acceptance checker:
+The entrypoint automatically runs Prisma migrations and seeds the database from `fixtures.json`.
+First startup takes ~4–5 minutes. Container becomes `(healthy)` when ready.
+
+### Acceptance Checker
 ```bash
-python3 run.py .dogfood.toml > acceptance-report.txt
+python run.py .dogfood.toml > acceptance-report.txt
 cat acceptance-report.txt
 ```
 
 ---
 
-## Auth & Accounts
+## 👤 Demo Accounts
 
-The database seed script automatically populates the database with the official `fixtures.json` and creates four authenticatable sessions:
+Passwords are printed by the seed script in container logs (`docker compose logs app`).
 
-| Role | Email | Purpose |
-|------|-------|---------|
-| **Organizer** | `organizer@dogfood.local` | Overview, analytics, and CSV exports |
-| **Judge A** | `tomas.varga@example.org` | Primary evaluator (`jdg_01`) |
-| **Judge B** | `wei.lindqvist@example.org` | Peer evaluator (`jdg_02`) |
-| **Participant** | `participant@dogfood.local` | Team member / submitter |
+| Role | Email | Dashboard |
+|------|-------|-----------|
+| **Organizer** | `organizer@dogfood.local` | `/dashboard/organizer` |
+| **Judge A** | `tomas.varga@example.org` | `/dashboard/judge` |
+| **Judge B** | `wei.lindqvist@example.org` | `/dashboard/judge` |
+| **Participant** | `participant@dogfood.local` | `/dashboard/participant` |
 
-To test the web interface directly, click any of the **Quick Access** buttons on the `/login` screen.
+Or click **"View demo credentials"** on the `/login` page — it prefills the email field.
 
----
-
-## Architectural & Design Highlights
-
-- **Next.js 14 App Router (Standalone)**: Server-side rendering (SSR) for instantaneous gallery loads with zero layout shift.
-- **Prisma ORM & PostgreSQL**: Relational schema guaranteeing referential integrity across projects, tracks, teams, judges, and score rubrics.
-- **Backend Defense-in-Depth**: Role authentication and permission checks occur inside route handlers before any database queries execute.
-- **Responsive Dark SaaS UI**: Tailored with Tailwind CSS using high-contrast neon accents, status pills, and keyboard-friendly controls.
+Register a new participant account at `/signup`.
 
 ---
 
-## Honest Limits & Known Scope
+## 🛠 Tech Stack
 
-- **Email Delivery**: Notifications and magic-link emails are disabled to maintain strict zero-network container isolation.
-- **Public Voting (T3)**: The data schema is pre-modeled for community votes and public feedback; production UI for public voting is staged for T3.
-- **CSV Format**: Exports use comma delimiters and quoted fields; custom TSV or JSON export presets can be configured if required.
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 App Router (standalone output) |
+| Database | PostgreSQL 16 via Docker |
+| ORM | Prisma 5 |
+| Auth | Custom session cookies + bcryptjs |
+| UI | Tailwind CSS 3, Framer Motion, Lucide React |
+| 3D | Three.js + React Three Fiber + Drei |
+| Validation | Zod |
+| Data fetching | SWR (organizer cockpit live polling) |
+| Language | TypeScript (strict) |
+| Container | Docker + Docker Compose |
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── app/
+│   ├── page.tsx                    # Landing page (3D hero, leaderboard, CTA)
+│   ├── projects/                   # Public gallery + detail pages
+│   ├── signup/                     # Participant registration
+│   ├── login/                      # Sign-in + demo credentials
+│   ├── forgot-password/            # Password reset request
+│   ├── reset-password/[token]/     # Password reset form
+│   ├── dashboard/
+│   │   ├── participant/            # Team status, scores, leaderboard
+│   │   ├── judge/                  # Scoring queue + score form
+│   │   └── organizer/              # KPI cockpit + coverage heatmap
+│   └── api/
+│       ├── auth/                   # login, register, forgot/reset password
+│       ├── judge/scores            # Role-isolated score endpoints
+│       ├── organizer/coverage      # Live coverage API (SWR target)
+│       └── export.csv              # RFC 4180 CSV export
+├── components/
+│   ├── shell/                      # Header, Footer, Container
+│   └── ui/                         # Button, Card, Input, Badge
+├── lib/db.ts                       # Prisma client + getSessionUser()
+└── assets/fonts/                   # Local fonts (offline-safe)
+
+prisma/
+├── schema.prisma                   # Event, Track, Team, Project, Score, User, Vote, Comment, AuditLog, PasswordResetToken
+└── migrations/                     # Versioned SQL migrations
+```
+
+---
+
+## 🧪 Acceptance Tests (T1 + T2 claimed)
+
+| Check | Endpoint | Expected |
+|-------|----------|----------|
+| Gallery is public | `GET /projects` | `200` + fixture titles in body |
+| Fixture projects shown | `GET /projects` | Glass Signal, Small Meadow, Deep Compass |
+| Closed event rejects submissions | `POST /projects/new` | `4xx` |
+| Judge sees own scores | `GET /api/judge/scores` | `200` |
+| Judge blocked from peer scores | `GET /api/judge/scores?judge=jdg_01` | `403` |
+| Participant blocked from judge API | `GET /api/judge/scores` | `403` |
+| CSV export works | `GET /api/export.csv` | `200` + CSV |
+
+---
+
+## ⚠️ Known Limits
+
+- **Email delivery** — Password reset links are shown on-screen in demo mode (`NEXT_PUBLIC_DEMO_MODE=true`). A production deploy would wire in a transactional email provider.
+- **Public voting (T3)** — Schema models `Vote` and `Comment` exist; UI deferred to T3.
+- **WebSockets** — Real-time uses SWR polling (5s organizer, 10s judge) rather than persistent WebSocket connections, compatible with Next.js standalone mode.
