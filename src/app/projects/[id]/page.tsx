@@ -1,32 +1,76 @@
-import { prisma, getSessionUser } from "@/lib/db";
-import Link from "next/link";
+import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { prisma, getSessionUser } from "@/lib/db";
 import { Header } from "@/components/shell/Header";
 import { Footer } from "@/components/shell/Footer";
 import { Container } from "@/components/shell/Container";
 import { Badge } from "@/components/ui/Badge";
-import { ExternalLink, ArrowLeft } from "lucide-react";
+import { ScoreVisualization } from "@/components/projects/ScoreVisualization";
+import { ProjectSidePanel } from "@/components/projects/ProjectSidePanel";
+import { FeedbackCard } from "@/components/projects/FeedbackCard";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  Users,
+  Shield,
+  Layers,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProjectPage({
-  params,
-}: {
+interface ProjectPageProps {
   params: { id: string };
-}) {
+}
+
+export async function generateMetadata({
+  params,
+}: ProjectPageProps): Promise<Metadata> {
+  const project = await prisma.project.findUnique({
+    where: { id: params.id },
+    select: { title: true, summary: true, track: { select: { name: true } } },
+  });
+
+  if (!project) {
+    return {
+      title: "Project Not Found — DOGFOOD 2026",
+    };
+  }
+
+  return {
+    title: `${project.title} — DOGFOOD 2026`,
+    description: project.summary,
+    openGraph: {
+      title: `${project.title} | ${project.track.name} — DOGFOOD 2026`,
+      description: project.summary,
+    },
+  };
+}
+
+function formatPublicMember(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.includes("@")) {
+    const local = trimmed.split("@")[0];
+    const initials = local
+      .split(/[._-]/)
+      .filter(Boolean)
+      .map((s) => s[0]?.toUpperCase() ?? "")
+      .join("");
+    return `${initials || local.slice(0, 2).toUpperCase()} (Participant)`;
+  }
+  return trimmed;
+}
+
+export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const [project, user] = await Promise.all([
     prisma.project.findUnique({
       where: { id: params.id },
       include: {
         team: true,
         track: true,
-        event: true,
         scores: {
           include: { judge: { select: { name: true } } },
-          orderBy: { createdAt: "asc" },
-        },
-        comments: {
-          include: { user: { select: { name: true, role: true } } },
           orderBy: { createdAt: "asc" },
         },
       },
@@ -36,15 +80,36 @@ export default async function ProjectPage({
 
   if (!project) notFound();
 
-  const avgScore =
-    project.scores.length > 0
-      ? (
-          project.scores.reduce(
-            (sum, s) => sum + (s.functionality + s.quality) / 2,
-            0
-          ) / project.scores.length
-        ).toFixed(2)
+  // Find prev/next projects within the same track
+  const [prevProject, nextProject] = await Promise.all([
+    prisma.project.findFirst({
+      where: { trackId: project.trackId, id: { lt: project.id } },
+      orderBy: { id: "desc" },
+      select: { id: true, title: true },
+    }),
+    prisma.project.findFirst({
+      where: { trackId: project.trackId, id: { gt: project.id } },
+      orderBy: { id: "asc" },
+      select: { id: true, title: true },
+    }),
+  ]);
+
+  const reviewCount = project.scores.length;
+  const funcAvg =
+    reviewCount > 0
+      ? project.scores.reduce((sum, s) => sum + s.functionality, 0) / reviewCount
       : null;
+  const qualAvg =
+    reviewCount > 0
+      ? project.scores.reduce((sum, s) => sum + s.quality, 0) / reviewCount
+      : null;
+  const overallAvg =
+    reviewCount > 0 && funcAvg !== null && qualAvg !== null
+      ? (funcAvg + qualAvg) / 2
+      : null;
+
+  // Format team members safely (no raw email leak to public)
+  const safeMembers = (project.team.members ?? []).map(formatPublicMember);
 
   return (
     <div className="min-h-screen flex flex-col bg-bg-1">
@@ -52,155 +117,170 @@ export default async function ProjectPage({
 
       <main className="flex-1 py-10">
         <Container size="xl">
-          <Link
-            href="/projects"
-            className="inline-flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-accent transition-colors mb-6"
-          >
-            <ArrowLeft size={14} aria-hidden />
-            <span>Back to Gallery</span>
-          </Link>
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center justify-between mb-8">
+            <Link
+              href="/projects"
+              className="inline-flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-accent transition-colors"
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Gallery</span>
+            </Link>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left: project details */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              <div>
-                <Badge variant="accent" size="sm" className="mb-2">
-                  {project.track.name}
-                </Badge>
-                <h1 className="font-display font-black text-3xl sm:text-5xl uppercase tracking-tight text-text-primary mt-1 mb-4 leading-tight">
+            <div className="flex items-center gap-2">
+              <Badge variant="accent" size="sm">
+                {project.track.name}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Main Layout: Left Content + Right Sticky Side Panel */}
+          <div className="flex flex-col lg:flex-row gap-10">
+            {/* Left Content Column */}
+            <div className="flex-1 min-w-0 space-y-10">
+              {/* 1. Hero Band */}
+              <div className="space-y-4">
+                <h1 className="font-display text-4xl sm:text-5xl font-black uppercase tracking-tight text-text-primary leading-tight">
                   {project.title}
                 </h1>
-                <p className="font-mono text-xs sm:text-sm text-text-secondary leading-relaxed">
+
+                <p className="font-mono text-sm text-text-secondary leading-relaxed max-w-2xl">
                   {project.summary}
                 </p>
+
+                {/* Team & Members Meta */}
+                <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-mono">
+                  <div className="flex items-center gap-2 bg-surface px-3 py-1.5 rounded-lg border border-border">
+                    <Users size={14} className="text-accent" />
+                    <span className="text-text-tertiary">Team:</span>
+                    <strong className="text-text-primary">{project.team.name}</strong>
+                  </div>
+
+                  {safeMembers.length > 0 && (
+                    <div className="flex items-center gap-1.5 text-text-tertiary">
+                      <span>Members:</span>
+                      <span className="text-text-secondary">
+                        {safeMembers.join(", ")}
+                      </span>
+                    </div>
+                  )}
+
+                  {project.repoUrl && (
+                    <a
+                      href={project.repoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-accent hover:underline ml-auto"
+                    >
+                      <span>Repository</span>
+                      <ExternalLink size={13} />
+                    </a>
+                  )}
+                </div>
               </div>
 
-              {/* Meta cards */}
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Team", value: project.team.name },
-                  { label: "Track", value: project.track.name },
-                  {
-                    label: "Submitted",
-                    value: new Date(project.submittedAt).toLocaleDateString(
-                      "en-US",
-                      { month: "short", day: "numeric", year: "numeric" }
-                    ),
-                  },
-                  {
-                    label: "Reviews",
-                    value: `${project.scores.length} completed`,
-                  },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-lg border border-border bg-surface p-4">
-                    <p className="font-mono text-[11px] text-text-tertiary tracking-wider uppercase mb-1">
-                      {item.label}
-                    </p>
-                    <p className="font-mono text-xs font-semibold text-text-primary">
-                      {item.value}
+              {/* 2. Score Section: Animated Radial & Bar Visualisation */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Shield size={16} className="text-accent" />
+                  <h2 className="font-display text-base font-bold uppercase tracking-wider text-text-primary">
+                    Evaluation Consensus
+                  </h2>
+                </div>
+                <ScoreVisualization
+                  funcAvg={funcAvg}
+                  qualAvg={qualAvg}
+                  overallAvg={overallAvg}
+                  reviewCount={reviewCount}
+                />
+              </div>
+
+              {/* 3. Judge Feedback List */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-display text-base font-bold uppercase tracking-wider text-text-primary">
+                    Judge Evaluations ({reviewCount})
+                  </h2>
+                  <span className="font-mono text-xs text-text-tertiary">
+                    {reviewCount > 0 ? "Independent reviews" : "No evaluations recorded"}
+                  </span>
+                </div>
+
+                {reviewCount === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border bg-surface/40 p-6 text-center">
+                    <p className="font-mono text-xs text-text-tertiary">
+                      Comments will appear here once designated judges submit their evaluation forms.
                     </p>
                   </div>
-                ))}
-              </div>
-
-              {/* Team Members */}
-              {project.team.members && project.team.members.length > 0 && (
-                <div className="rounded-lg border border-border bg-surface p-4">
-                  <p className="font-mono text-[11px] text-text-tertiary tracking-wider uppercase mb-1">
-                    Team Members
-                  </p>
-                  <p className="font-mono text-xs text-text-secondary">
-                    {project.team.members.join(", ")}
-                  </p>
-                </div>
-              )}
-
-              {/* Repo link */}
-              {project.repoUrl && (
-                <div>
-                  <a
-                    href={project.repoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-xs font-mono font-bold tracking-wider uppercase text-text-primary hover:border-accent hover:text-accent transition-colors"
-                  >
-                    <span>View Repository</span>
-                    <ExternalLink size={14} aria-hidden />
-                  </a>
-                </div>
-              )}
-
-              {/* Privacy Notice */}
-              <div className="rounded-lg border border-border bg-bg-2 p-3 text-[11px] font-mono text-text-tertiary leading-relaxed">
-                <span className="text-text-secondary uppercase font-bold mr-1">Privacy Notice:</span>
-                Participant emails (team members) and repository URLs are visible to other participants and judges for the duration of the event.
-              </div>
-
-              {/* Comments */}
-              {project.comments.length > 0 && (
-                <div className="mt-4">
-                  <p className="font-mono text-xs font-semibold tracking-wider text-text-tertiary uppercase mb-3">
-                    Evaluation Comments ({project.comments.length})
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {project.comments.map((c) => (
-                      <div
-                        key={c.id}
-                        className="rounded-lg border border-border bg-surface p-4"
-                      >
-                        <p className="font-mono text-xs text-accent uppercase mb-1">
-                          {c.user.name} · {c.user.role.toLowerCase()}
-                        </p>
-                        <p className="font-mono text-xs text-text-secondary leading-relaxed">
-                          {c.content}
-                        </p>
-                      </div>
+                ) : (
+                  <div className="space-y-4">
+                    {project.scores.map((score, index) => (
+                      <FeedbackCard
+                        key={score.id}
+                        judgeLabel={`Judge ${index + 1}`}
+                        funcScore={score.functionality}
+                        qualScore={score.quality}
+                        comment={score.comment || "Evaluation completed without additional qualitative remarks."}
+                      />
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Right: score panel */}
-            <div className="flex flex-col gap-4">
-              {avgScore && (
-                <div className="rounded-xl border border-accent/40 bg-surface p-6 shadow-sm">
-                  <p className="font-mono text-xs tracking-wider text-text-tertiary uppercase mb-2">
-                    Average Score
-                  </p>
-                  <p className="font-display font-black text-5xl text-accent">{avgScore}</p>
-                  <p className="font-mono text-xs text-text-tertiary mt-1">out of 10</p>
-                </div>
-              )}
-
-              {project.scores.length > 0 && (
-                <div className="rounded-xl border border-border bg-surface p-5">
-                  <p className="font-mono text-xs font-semibold tracking-wider text-text-tertiary uppercase mb-4">
-                    Score Breakdown
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {project.scores.map((s) => (
-                      <div
-                        key={s.id}
-                        className="flex flex-col gap-1 pb-3 border-b border-border/50 last:border-0 last:pb-0"
-                      >
-                        <p className="font-mono text-xs font-semibold text-text-primary">
-                          {s.judge.name}
-                        </p>
-                        <div className="flex gap-4 text-xs font-mono">
-                          <span className="text-text-tertiary">
-                            Func: <span className="text-accent font-bold">{s.functionality}</span>
-                          </span>
-                          <span className="text-text-tertiary">
-                            Quality: <span className="text-accent font-bold">{s.quality}</span>
-                          </span>
+              {/* 5. Track Prev / Next Navigation */}
+              <div className="border-t border-border pt-8">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+                  {prevProject ? (
+                    <Link
+                      href={`/projects/${prevProject.id}`}
+                      className="w-full sm:w-auto inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 hover:border-accent hover:text-accent transition-colors"
+                    >
+                      <ArrowLeft size={14} />
+                      <div className="text-left">
+                        <div className="text-[10px] uppercase text-text-tertiary">Previous in Track</div>
+                        <div className="font-bold text-text-primary truncate max-w-[180px]">
+                          {prevProject.title}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </Link>
+                  ) : (
+                    <div />
+                  )}
+
+                  {nextProject ? (
+                    <Link
+                      href={`/projects/${nextProject.id}`}
+                      className="w-full sm:w-auto inline-flex items-center justify-end gap-2 rounded-lg border border-border bg-surface px-4 py-3 hover:border-accent hover:text-accent transition-colors text-right ml-auto"
+                    >
+                      <div>
+                        <div className="text-[10px] uppercase text-text-tertiary">Next in Track</div>
+                        <div className="font-bold text-text-primary truncate max-w-[180px]">
+                          {nextProject.title}
+                        </div>
+                      </div>
+                      <ArrowRight size={14} />
+                    </Link>
+                  ) : (
+                    <div />
+                  )}
                 </div>
-              )}
+              </div>
             </div>
+
+            {/* 4. Desktop Sticky Side Panel / Mobile Collapsible Card */}
+            <ProjectSidePanel
+              project={{
+                id: project.id,
+                title: project.title,
+                summary: project.summary,
+                repoUrl: project.repoUrl,
+                submittedAt: project.submittedAt.toISOString(),
+                teamName: project.team.name,
+                trackName: project.track.name,
+                reviewCount,
+                avgScore: overallAvg ? overallAvg.toFixed(1) : null,
+              }}
+            />
           </div>
         </Container>
       </main>

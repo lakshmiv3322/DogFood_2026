@@ -86,6 +86,23 @@ module.exports = {
         sm: "8px",
         md: "16px",
       },
+
+      /* ── Animation durations & keyframes ── */
+      transitionDuration: {
+        fast: "120ms",
+        normal: "200ms",
+        moderate: "320ms",
+        deliberate: "500ms",
+      },
+      keyframes: {
+        "page-enter": {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        "page-enter": "page-enter 240ms cubic-bezier(0.33, 1, 0.68, 1) forwards",
+      },
     },
   },
   plugins: [],
